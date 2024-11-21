@@ -64,3 +64,42 @@ spec:
     requests:
       storage: 8Gi
   storageClassName: csi-hostpath-sc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mysql-dump
+spec:
+  schedule: "0 3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mysql-dump
+            image: leonardosartorello/mysqldump:v4
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: MYSQL_ENV_DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: dados
+                  key: DB_HOST
+            - name: MYSQL_ENV_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: senhas
+                  key: DB_USER
+            - name: MYSQL_ENV_DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: senhas
+                  key: DB_PASSWORD
+            volumeMounts:
+            - name: mysqldump
+              mountPath: /mysqldump
+          restartPolicy: OnFailure
+          volumes:
+          - name: mysqldump
+            hostPath:
+              path: /home/alura/mysqldump
